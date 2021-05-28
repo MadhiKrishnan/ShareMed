@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:share_the_wealth/constants/api_paths.dart';
 import 'package:share_the_wealth/main.dart';
+import 'package:share_the_wealth/screens/Prooduct_detail.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class ImageWidget extends StatelessWidget{
+class ImageWidget extends StatefulWidget {
   int productId;
   String productName;
   String decription;
@@ -13,6 +15,43 @@ class ImageWidget extends StatelessWidget{
   int doationCount;
 
   ImageWidget(this.productId,this.productName,this.decription,this.imgPath,this.tags,this.donationRecived,this.doationCount);
+
+  @override
+  _ImageWidgetState createState() => _ImageWidgetState(productId, productName, decription, imgPath, tags, donationRecived, doationCount);
+}
+
+class _ImageWidgetState extends State<ImageWidget> {
+  int productId;
+  String productName;
+  String decription;
+  String imgPath;
+  String tags;
+  double donationRecived;
+  int doationCount;
+
+  _ImageWidgetState(this.productId,this.productName,this.decription,this.imgPath,this.tags,this.donationRecived,this.doationCount);
+
+  String partyType;
+
+  _getSharedPrefInfo() async{
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String partyType = prefs.getString('partyType');
+    if(partyType == 'accepter'){
+      setState(() {
+        this.partyType = partyType;
+        productName = productName.replaceAll("Donate", 'Recive');
+      });
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+      _getSharedPrefInfo();
+  }
+
+
+
   @override
   Widget build(BuildContext context) {
     // TODO: implement build
@@ -70,26 +109,26 @@ class ImageWidget extends StatelessWidget{
                               builder: (context) {
                                 final split = tags.split(",");
 
-                                  return
-                                    Row(
-                                      children: [
-                                        for(var i in split)
-                                          Container(
-                                            decoration: BoxDecoration(
-                                                color: Color(0x66FFA500),
-                                                borderRadius: BorderRadius.circular(50)
-                                            ),
-                                            padding: EdgeInsets.symmetric(vertical: 10,horizontal: 12),
-                                            margin: EdgeInsets.only(right: 10),
-                                            child: Text(i.toString(),
-                                                style: TextStyle(
-                                                  color: Color(0xFFF99300),
-                                                )
-                                            ),
-                                          )
-                                      ],
-                                    );
-                                }
+                                return
+                                  Row(
+                                    children: [
+                                      for(var i in split)
+                                        Container(
+                                          decoration: BoxDecoration(
+                                              color: Color(0x66FFA500),
+                                              borderRadius: BorderRadius.circular(50)
+                                          ),
+                                          padding: EdgeInsets.symmetric(vertical: 10,horizontal: 12),
+                                          margin: EdgeInsets.only(right: 10),
+                                          child: Text(i.toString(),
+                                              style: TextStyle(
+                                                color: Color(0xFFF99300),
+                                              )
+                                          ),
+                                        )
+                                    ],
+                                  );
+                              }
                           )
                         ],
                       ),
@@ -135,20 +174,27 @@ class ImageWidget extends StatelessWidget{
                         ],
                       ),
                     ),
-                    Container(
-                      padding: EdgeInsets.symmetric(vertical: 10),
-                      child: Center(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                            color: Color(0xFFF99300),
-                          ),
-                          width: 250,
-                          child: TextButton(
-                              child: Text(
-                                'Donate',
-                                style: TextStyle(color: Colors.white, fontSize: 20),
-                              )
+                    GestureDetector(
+                      onTap: (){
+                        Navigator.push(context, MaterialPageRoute(builder: (context){
+                          return ProductDetail(productId,partyType);
+                        }));
+                      },
+                      child: Container(
+                        padding: EdgeInsets.symmetric(vertical: 10),
+                        child: Center(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10),
+                              color: Color(0xFFF99300),
+                            ),
+                            width: 250,
+                            child: TextButton(
+                                child: Text(
+                                  partyType !=null?'Recive':'Donate',
+                                  style: TextStyle(color: Colors.white, fontSize: 20),
+                                )
+                            ),
                           ),
                         ),
                       ),

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:share_the_wealth/main.dart';
+import 'package:share_the_wealth/screens/Admin/Admin_home.dart';
+import 'package:share_the_wealth/screens/Admin/RequestList.dart';
 import 'package:share_the_wealth/screens/Profile.dart';
 
 class BottomNavigation extends StatefulWidget {
@@ -19,16 +21,15 @@ class _BottomNavigationState extends State<BottomNavigation> {
           switch(currentIndex){
             case 0:
               Navigator.push(context, MaterialPageRoute(builder: (context){
-                return MyApp();
+                return AdminHomeScreen();
               }));
               break;
             case 1:
-              contents = "Subscription";
+              Navigator.push(context, MaterialPageRoute(builder: (context){
+                return RequestList();
+              }));
               break;
             case 2:
-              contents = "Community";
-              break;
-            case 3:
               Navigator.push(context, MaterialPageRoute(builder: (context){
                 return ProfileScreen();
               }));
@@ -39,16 +40,16 @@ class _BottomNavigationState extends State<BottomNavigation> {
       type: BottomNavigationBarType.fixed,
       items: <BottomNavigationBarItem>[
         BottomNavigationBarItem(
-          icon: Icon(Icons.volunteer_activism),
-          label: 'Home',
+          icon: Icon(Icons.home),
+          label: 'Donations',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.subscriptions_outlined),
-          label: 'Subscription',
+          icon: Icon(Icons.request_page),
+          label: 'Requests',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.group_work),
-          label: 'Community',
+          icon: Icon(Icons.pending_actions),
+          label: 'More Actions',
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.account_circle_outlined),

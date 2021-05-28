@@ -5,10 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:share_the_wealth/constants/api_paths.dart';
 import 'package:share_the_wealth/main.dart';
 import 'package:share_the_wealth/model/Login.dart';
+import 'package:share_the_wealth/screens/Admin/Admin_home.dart';
 import 'package:share_the_wealth/screens/CreateAccount.dart';
 import 'package:share_the_wealth/screens/Profile.dart';
 import 'package:share_the_wealth/widgets/BottomNavigation.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 
 Future<Login> _checkLogin(String email,String password) async {
@@ -57,7 +59,9 @@ class _LoginScreenBodyState extends State<LoginScreenBody> {
   final _formKey = GlobalKey<FormState>();
   // Initially password is obscure
   bool _obscureText = true;
-  bool isLoggedInSuccessfully = true;
+  bool isLoggedInSuccessfully = false;
+  int partyId;
+  String partyType;
   // Toggles the password show status
   void _toggle() {
     setState(() {
@@ -67,6 +71,18 @@ class _LoginScreenBodyState extends State<LoginScreenBody> {
 
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
+
+  _setUserLoginData(int partyId) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool("isUserLoggedIn", true);
+    await prefs.setInt("partyId", partyId);
+  }
+
+  _updateSharedPred(String partyType) async{
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setString("partyType", partyType);
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -180,20 +196,45 @@ class _LoginScreenBodyState extends State<LoginScreenBody> {
                             showDialog(context: context, builder: (context){
                               return AlertDialog(
                                 content: FutureBuilder<Login> (
-                                  future:  _checkLogin(emailController.text,passwordController.text),
+                                  future:   _checkLogin(emailController.text,passwordController.text),
                                   builder: (context,AsyncSnapshot snapshot){
-                                    if(snapshot.hasData && snapshot.data.isValidUser){
-                                      return Text("Logged In successfully");
-                                    }else {
-                                       return Text('Failed to Login');
+                                    switch(snapshot.connectionState){
+                                      case ConnectionState.waiting : return CircularProgressIndicator();
+                                      default :
+                                        if(snapshot.hasError){
+                                          return Text("Error While Registering");
+                                        }else {
+                                          if(snapshot.hasData && snapshot.data.isValidUser) {
+                                            isLoggedInSuccessfully = true;
+                                            partyId = snapshot.data.partyId;
+                                            partyType = snapshot.data.partyType;
+                                            return Text("Logged In successfully");
+                                          }else {
+                                            return Text('Failed to Login');
+                                          }
+                                        }
                                     }
                                   },
                                 ),
                                 actions: [TextButton(onPressed: (){
+
                                   if(isLoggedInSuccessfully){
-                                    Navigator.push(context, MaterialPageRoute(builder: (context){
-                                      return MyApp();
-                                    }));
+                                    _setUserLoginData(this.partyId);
+                                    if(partyType == 'admin'){
+                                      _updateSharedPred('admin');
+                                      Navigator.push(context, MaterialPageRoute(builder: (context){
+                                        return AdminHomeScreen();
+                                      }));
+                                    }else if(partyType == 'accepter') {
+                                      _updateSharedPred('accepter');
+                                      Navigator.push(context, MaterialPageRoute(builder: (context){
+                                        return MyApp();
+                                      }));
+                                    }else if(partyType == "doner") {
+                                      Navigator.push(context, MaterialPageRoute(builder: (context){
+                                        return MyApp();
+                                      }));
+                                    }
                                   }else {
                                     Navigator.push(context, MaterialPageRoute(builder: (context){
                                       return LoginScreen();

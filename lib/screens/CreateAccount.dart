@@ -277,17 +277,21 @@ class _createAccountScreenBodyState extends State<createAccountScreenBody> {
                               return AlertDialog(
                                   content: FutureBuilder<Party> (
                                     future:  _createParty(firstNameController.text, lastNameController.text, emailController.text, passwordController.text,_dropDownValue),
-                                    builder: (context,AsyncSnapshot snapshot){
-                                      if(snapshot.hasData){
-                                        return Text("Registered Successfully");
-                                      }else {
-                                        return Text('Failed to register');
+                                    builder: (context,AsyncSnapshot<Party> snapshot){
+                                      switch(snapshot.connectionState){
+                                        case ConnectionState.waiting : return CircularProgressIndicator();
+                                        default :
+                                          if(snapshot.hasError){
+                                            return Text("Error While Registering");
+                                          }else {
+                                            return Text('Registered Successfully');
+                                          }
                                       }
                                     },
                                   ),
-                                actions: [TextButton(onPressed: (){
+                                  actions: [TextButton(onPressed: (){
                                   Navigator.push(context, MaterialPageRoute(builder: (context){
-                                    return MyApp();
+                                    return LoginScreen();
                                   }));
                                 }, child: Text('Ok'))],
                               );
