@@ -32,5 +32,4 @@ class Donation {
         productInfo: Product.fromJson(json['productInfo'])
     );
   }
-
 }

@@ -1,18 +1,16 @@
 import 'dart:convert';
-
-import 'package:flutter/gestures.dart';
+import 'dart:io';
+import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:share_the_wealth/constants/api_paths.dart';
 import 'package:share_the_wealth/main.dart';
 import 'package:share_the_wealth/model/Donation.dart';
 import 'package:share_the_wealth/model/MedRequest.dart';
-import 'package:share_the_wealth/model/MedicationType.dart';
 import 'package:share_the_wealth/model/Product.dart';
-import 'package:share_the_wealth/screens/Login.dart';
-import 'package:share_the_wealth/screens/Profile.dart';
 import 'package:share_the_wealth/widgets/BottomNavigation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:image_picker/image_picker.dart';
 
 
 
@@ -21,7 +19,7 @@ Future<Product> _fetchProductDetail(int productId) async{
   if(response.statusCode == 200){
     return Product.fromJson(jsonDecode(response.body));
   }else {
-    throw Exception('Unexpected error occured!');
+    throw Exception('Unexpected error occurred !');
   }
 }
 
@@ -31,11 +29,11 @@ Future<List<Medication>> _fetchMedications(String productId) async{
     List medicationList = json.decode(response.body);
     return medicationList.map((e) => new Medication.fromJson(e)).toList();
   }else {
-    throw Exception('Unexpected error occured!');
+    throw Exception('Unexpected error occurred!');
   }
 }
 
-Future<Donation> _createDonationRequets(String medicationType,String medicationName,int numberOfDoses,String pickUpAddress1,String pickUpAddress2,String state,String city,String donationStatus,int partyId,int productId) async{
+Future<Donation> _createDonationRequest(String medicationType,String medicationName,int numberOfDoses,String pickUpAddress1,String pickUpAddress2,String state,String city,String donationStatus,int partyId,int productId) async{
   final response =  await http.post(Uri.http(ApiPaths.shareMedBackendEndPoint+':'+ApiPaths.port, '/addDonation'),
     headers: <String, String>{
       'Content-Type': 'application/json; charset=UTF-8',
@@ -59,12 +57,12 @@ Future<Donation> _createDonationRequets(String medicationType,String medicationN
   if(response.statusCode == 200){
     return Donation.fromJson(json.decode(response.body));
   }else {
-    throw Exception('Unexpected error occured!');
+    throw Exception('Unexpected error occurred!');
   }
   
 }
 
-Future<MedRequest> _createMedRequest(String medicationType,String medicationName,int numberOfDoses,String dropAddress1,String dropAddress2,String state,String city,String medReqStatus,int partyId,int productId) async{
+Future<MedRequest> _createMedRequest(String medicationType,String medicationName,int numberOfDoses,String dropAddress1,String dropAddress2,String state,String city,String medReqStatus,int partyId,int productId,File prescription) async{
   final response =  await http.post(Uri.http(ApiPaths.shareMedBackendEndPoint+':'+ApiPaths.port, '/addMedRequest'),
     headers: <String, String>{
       'Content-Type': 'application/json; charset=UTF-8',
@@ -80,7 +78,8 @@ Future<MedRequest> _createMedRequest(String medicationType,String medicationName
       'city':city,
       'requestStatus':medReqStatus,
       'partyId':partyId,
-      'productId':productId
+      'productId':productId,
+      'prescriptionUrl':' '
     }
     ),
   );
@@ -88,7 +87,24 @@ Future<MedRequest> _createMedRequest(String medicationType,String medicationName
   if(response.statusCode == 200){
     return MedRequest.fromJson(json.decode(response.body));
   }else {
-    throw Exception('Unexpected error occured!');
+    throw Exception('Unexpected error occurred!');
+  }
+
+}
+
+Future<bool> _uploadPrescritpion(String medRequestId,File file) async{
+  http.MultipartRequest request = new http.MultipartRequest("POST", Uri.http(ApiPaths.shareMedBackendEndPoint+':'+ApiPaths.port, '/uploadPrescription/'+medRequestId));
+
+  http.MultipartFile multipartFile = await http.MultipartFile.fromPath(
+      'file', file.path);
+
+  request.files.add(multipartFile);
+
+  http.StreamedResponse response = await request.send();
+  if(response.statusCode == 200){
+    return true;
+  }else {
+    return false;
   }
 
 }
@@ -145,7 +161,7 @@ class _DonationScreenBodyState extends State<DonationScreenBody> {
   _DonationScreenBodyState(this.productId,this.partyType);
 
   Future<Product> futureProduct;
-  List<String> medList=['oxidiacodin'];
+  List<String> medList=['oxicodon'];
   String productType;
 
   bool isLoggedInUser = false;
@@ -166,7 +182,6 @@ class _DonationScreenBodyState extends State<DonationScreenBody> {
     super.initState();
     futureProduct = _fetchProductDetail(productId);
     _checkIfUserLoggedIn();
-    List<String> mlist=[];
      _fetchMedications(this.productId.toString()).then((value){
         for(int i =0;i<=value.length;i++){
           medList.add(value[i].medicationName);
@@ -174,9 +189,6 @@ class _DonationScreenBodyState extends State<DonationScreenBody> {
     });
   }
 
-  void foo() async {
-    final user = await _fetchProductDetail(productId);
-  }
 
   final medicationNameController = TextEditingController();
   final numberOfDosesController = TextEditingController();
@@ -184,6 +196,25 @@ class _DonationScreenBodyState extends State<DonationScreenBody> {
   final addressLine2Controller = TextEditingController();
   final stateController = TextEditingController();
   final cityController = TextEditingController();
+
+  File _image;
+  final picker = ImagePicker();
+
+  Future getImageFromGallary() async {
+    final pickedImage = await picker.getImage(source: ImageSource.gallery);
+
+    setState(() {
+      if(pickedImage != null){
+        setState(() {
+          _image = File(pickedImage.path);
+        });
+      }else {
+        _image = null;
+      }
+    });
+
+  }
+
   String _dropDownValue;
   @override
   void dispose() {
@@ -292,7 +323,7 @@ class _DonationScreenBodyState extends State<DonationScreenBody> {
                               ),
                               padding: EdgeInsets.only(left: 10),
                               child: DropdownButton(
-                                hint:  _dropDownValue == null?Center(child: Text('Select Medaation!')):Center(child: Text(_dropDownValue)),
+                                hint:  _dropDownValue == null?Center(child: Text('Select Medication!')):Center(child: Text(_dropDownValue)),
                                 isExpanded: true,
                                 iconEnabledColor: Color(0xFFF99300),
                                 items: medList.map(
@@ -418,6 +449,39 @@ class _DonationScreenBodyState extends State<DonationScreenBody> {
                             ),
                           ),
                         ),
+                        Builder(builder: (context){
+                          if(partyType != null){
+                            return
+                              Column(
+                                children: [
+                                  Container(
+                                    padding: EdgeInsets.symmetric(vertical: 20),
+                                    width: MediaQuery.of(context).size.width,
+                                    child: _image == null ? Center(child: Text('No Prescription Selected')):Image.file(_image),
+                                  ),
+                                  Container(
+                                    width: MediaQuery.of(context).size.width,
+                                    padding: EdgeInsets.symmetric(vertical: 10),
+                                    child: DottedBorder(
+                                      strokeWidth: .5,
+                                      child: TextButton(
+                                          onPressed: getImageFromGallary,
+                                          child: Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                            children: [
+                                              Icon(Icons.file_copy_outlined),
+                                              Text('Select Prescription from Gallery')
+                                            ],
+                                          )
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              );
+                          }else {
+                            return Container();
+                          }
+                        }),
                         SizedBox(
                           width: MediaQuery.of(context).size.width,
                           child: ElevatedButton(onPressed: (){
@@ -425,7 +489,7 @@ class _DonationScreenBodyState extends State<DonationScreenBody> {
                                if(partyType != null){
                                 return  AlertDialog(
                                   content: FutureBuilder<MedRequest> (
-                                    future:  _createMedRequest(productType, _dropDownValue, int.parse(numberOfDosesController.text), addressLine1Controller.text, addressLine2Controller.text, stateController.text, cityController.text, 'requested', this.partyId,this.productId),
+                                    future:  _createMedRequest(productType, _dropDownValue, int.parse(numberOfDosesController.text), addressLine1Controller.text, addressLine2Controller.text, stateController.text, cityController.text, 'Yet_To_Deliver', this.partyId,this.productId,_image),
                                     builder: (context,AsyncSnapshot<MedRequest> snapshot){
                                       switch(snapshot.connectionState){
                                         case ConnectionState.waiting: return CircularProgressIndicator();
@@ -433,8 +497,16 @@ class _DonationScreenBodyState extends State<DonationScreenBody> {
                                           if(snapshot.hasError){
                                             return Text(snapshot.error);
                                           }else {
-                                            var requestId = snapshot.data.medRequestId;
-                                            return Text("Request Submitted Successfully");
+                                            String medRequestId = snapshot.data.medRequestId.toString();
+                                            var uploaded = false;
+                                            _uploadPrescritpion(medRequestId, _image).then((response) {
+                                              if(response){
+                                                uploaded = true;
+                                              }
+                                            });
+
+                                            return  Text("Request Has Been Submited Wiht Request id : ${snapshot.data.medRequestId.toString()}");
+
                                           }
                                       }
                                     },
@@ -448,16 +520,16 @@ class _DonationScreenBodyState extends State<DonationScreenBody> {
                               }else {
                                  return  AlertDialog(
                                    content: FutureBuilder<Donation> (
-                                     future:  _createDonationRequets(productType, _dropDownValue, int.parse(numberOfDosesController.text), addressLine1Controller.text, addressLine2Controller.text, stateController.text, cityController.text, 'not_recived', this.partyId,this.productId),
+                                     future:  _createDonationRequest(productType, _dropDownValue, int.parse(numberOfDosesController.text), addressLine1Controller.text, addressLine2Controller.text, stateController.text, cityController.text, 'not_recived', this.partyId,this.productId),
                                      builder: (context,AsyncSnapshot<Donation> snapshot){
                                        switch(snapshot.connectionState){
                                          case ConnectionState.waiting: return CircularProgressIndicator();
                                          default :
                                            if(snapshot.hasError){
-                                             return Text(snapshot.error);
+                                             return Text("Request Submitted Successfully");
                                            }else {
                                              var requestId = snapshot.data.donationId;
-                                             return Text("Request Submitted Successfully");
+                                             return Text("Request Submitted Successfully with request Id ${requestId}");
                                            }
                                        }
                                      },

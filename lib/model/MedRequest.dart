@@ -1,5 +1,3 @@
-import 'package:share_the_wealth/model/Product.dart';
-
 class MedRequest {
   final int medRequestId;
   final String medicationType;

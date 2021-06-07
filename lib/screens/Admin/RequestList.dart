@@ -6,6 +6,8 @@ import 'package:share_the_wealth/screens/Admin/RequestDetail.dart';
 import 'package:share_the_wealth/widgets/AdminBottomNav.dart';
 import 'package:http/http.dart' as http;
 
+
+
 Future<List<MedRequest>> _fetchPendingRequest() async{
   final response = await http.get(Uri.http(ApiPaths.shareMedBackendEndPoint+":"+ApiPaths.port, "/getPendingRequest"));
   if(response.statusCode == 200){
@@ -28,8 +30,9 @@ class MedRequest {
   final String medRequestStatus;
   final int partyId;
   final int productId;
+  final String presUrl;
 
-  MedRequest({this.medicationType,this.medicationName,this.numberOfDoses,this.dropAddress1,this.dropAddress2,this.state,this.city,this.medRequestStatus,this.partyId,this.medRequestId,this.productId});
+  MedRequest({this.medicationType,this.medicationName,this.numberOfDoses,this.dropAddress1,this.dropAddress2,this.state,this.city,this.medRequestStatus,this.partyId,this.medRequestId,this.productId,this.presUrl});
 
   factory MedRequest.fromJson(Map<String,dynamic> json) {
     return MedRequest(
@@ -44,6 +47,7 @@ class MedRequest {
         partyId:json['partyId'],
         medRequestId: json['medRequestId'],
         productId: json['productId'],
+        presUrl: json['prescriptionUrl']
     );
   }
 
@@ -75,7 +79,6 @@ class RequestListBody extends StatefulWidget {
 class _RequestListBodyState extends State<RequestListBody> {
 
   Future<List<MedRequest>> pendingDonation;
-
   @override
   void initState() {
     super.initState();

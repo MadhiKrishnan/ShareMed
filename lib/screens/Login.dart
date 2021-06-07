@@ -72,7 +72,7 @@ class _LoginScreenBodyState extends State<LoginScreenBody> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
-  _setUserLoginData(int partyId) async {
+  _setUserLoginData(int partyId,String partyType) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setBool("isUserLoggedIn", true);
     await prefs.setInt("partyId", partyId);
@@ -219,7 +219,7 @@ class _LoginScreenBodyState extends State<LoginScreenBody> {
                                 actions: [TextButton(onPressed: (){
 
                                   if(isLoggedInSuccessfully){
-                                    _setUserLoginData(this.partyId);
+                                    _setUserLoginData(this.partyId,this.partyType);
                                     if(partyType == 'admin'){
                                       _updateSharedPred('admin');
                                       Navigator.push(context, MaterialPageRoute(builder: (context){

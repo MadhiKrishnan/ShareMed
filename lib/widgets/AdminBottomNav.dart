@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:share_the_wealth/main.dart';
 import 'package:share_the_wealth/screens/Admin/Admin_home.dart';
+import 'package:share_the_wealth/screens/Admin/Admin_profile.dart';
+import 'package:share_the_wealth/screens/Admin/Inventory.dart';
 import 'package:share_the_wealth/screens/Admin/RequestList.dart';
-import 'package:share_the_wealth/screens/Profile.dart';
 
 class BottomNavigation extends StatefulWidget {
   @override
@@ -31,6 +31,11 @@ class _BottomNavigationState extends State<BottomNavigation> {
               break;
             case 2:
               Navigator.push(context, MaterialPageRoute(builder: (context){
+                return InventoryScreen();
+              }));
+              break;
+            case 3:
+              Navigator.push(context, MaterialPageRoute(builder: (context){
                 return ProfileScreen();
               }));
               break;
@@ -49,7 +54,7 @@ class _BottomNavigationState extends State<BottomNavigation> {
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.pending_actions),
-          label: 'More Actions',
+          label: 'Inventory',
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.account_circle_outlined),
